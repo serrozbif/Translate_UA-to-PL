@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Українсько-польський перекладач (Gemini API)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f0f4f8;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid #e0e4e8;
+        }
+        
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        
+        p.subtitle {
+            color: #5f6368;
+            font-size: 16px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .translation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .translation-area {
+                flex-direction: row;
+            }
+        }
+        
+        .text-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        label {
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 5px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 220px;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .controls {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+        
+        .style-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1765cc;
+        }
+        
+        button:active {
+            background-color: #155db3;
+        }
+        
+        .style-button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: #f1f3f4;
+            color: #202124;
+            border: 2px solid transparent;
+            font-size: 14px;
+        }
+        
+        .style-button.active {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            border-color: #1a73e8;
+        }
+        
+        .style-button:hover:not(.active) {
+            background-color: #e8eaed;
+        }
+        
+        .api-key-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dadce0;
+            transition: all 0.3s ease;
+        }
+        
+        .api-key-section.collapsed {
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        
+        .api-key-section.collapsed .api-key-input,
+        .api-key-section.collapsed .api-key-note {
+            display: none;
+        }
+        
+        .api-key-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .api-key-toggle {
+            background: none;
+            border: none;
+            color: #1a73e8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .api-key-toggle:hover {
+            text-decoration: underline;
+        }
+        
+        .api-key-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .api-key-input input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .api-key-input input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        .api-key-status {
+            font-size: 14px;
+            color: #188038;
+            margin-left: 10px;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e8eaed;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: #d93025;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fce8e6;
+            display: none;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #5f6368;
+            font-size: 14px;
+            padding: 20px 0;
+            border-top: 1px solid #e0e4e8;
+        }
+        
+        .gemini-logo {
+            margin: 0 auto 15px;
+            width: 30px;
+            height: 30px;
+            background-color: #8e24aa;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .gemini-logo::before {
+            content: "G";
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="gemini-logo"></div>
+        <h1>Українсько-польський перекладач</h1>
+        <p class="subtitle">Переклад з використанням Google Gemini API</p>
+    </header>
+    
+    <div class="container">
+        <div class="api-key-section" id="api-key-section">
+            <div class="api-key-header">
+                <label for="api-key">API ключ Gemini 
+                    <span class="tooltip">ⓘ
+                        <span class="tooltiptext">Для використання перекладача потрібен API ключ Google Gemini. Отримайте ключ на сайті Google AI Studio.</span>
+                    </span>
+                </label>
+                <span class="api-key-status" id="api-key-status">Ключ збережено</span>
+                <button class="api-key-toggle" id="api-key-toggle">Згорнути</button>
+            </div>
+            <div class="api-key-input">
+                <input type="password" id="api-key" placeholder="Введіть ваш API ключ Google Gemini">
+                <button id="save-api-key">Зберегти</button>
+            </div>
+            <p class="api-key-note" style="font-size: 13px; margin-top: 8px; color: #5f6368;">Ваш API ключ зберігається лише локально у вашому браузері.</p>
+        </div>
+        
+        <div class="translation-area">
+            <div class="text-column">
+                <label for="source-text">Український текст</label>
+                <textarea id="source-text" placeholder="Введіть текст для перекладу..."></textarea>
+            </div>
+            
+            <div class="text-column">
+                <label for="translated-text">Польський переклад</label>
+                <textarea id="translated-text" placeholder="Тут з'явиться переклад..." readonly></textarea>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="style-controls">
+                <span style="font-weight: 500; margin-right: 10px; align-self: center;">Стиль:</span>
+                <button class="style-button active" data-style="casual">Вільний</button>
+                <button class="style-button" data-style="friendly">Дружній</button>
+                <button class="style-button" data-style="formal">Діловий</button>
+            </div>
+            
+            <button id="translate-button">Перекласти</button>
+        </div>
+        
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <span>Перекладаємо...</span>
+        </div>
+        
+        <div class="error-message" id="error-message">
+            Сталася помилка при перекладі. Перевірте API ключ та спробуйте знову.
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 Українсько-польський перекладач | Використовує технологію Google Gemini</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const apiKeyInput = document.getElementById('api-key');
+            const saveApiKeyButton = document.getElementById('save-api-key');
+            const sourceText = document.getElementById('source-text');
+            const translatedText = document.getElementById('translated-text');
+            const translateButton = document.getElementById('translate-button');
+            const styleButtons = document.querySelectorAll('.style-button');
+            const loadingIndicator = document.querySelector('.loading');
+            const errorMessage = document.getElementById('error-message');
+            const apiKeySection = document.getElementById('api-key-section');
+            const apiKeyToggle = document.getElementById('api-key-toggle');
+            const apiKeyStatus = document.getElementById('api-key-status');
+            
+            // Current translation style
+            let currentStyle = 'casual';
+            let apiKeyCollapsed = false;
+            
+            // Load saved API key if exists
+            if (localStorage.getItem('gemini_api_key')) {
+                apiKeyInput.value = localStorage.getItem('gemini_api_key');
+                apiKeyStatus.style.display = 'inline';
+                
+                // Auto-collapse after page load if API key is saved
+                setTimeout(() => {
+                    collapseApiKeySection();
+                }, 1000);
+            }
+            
+            // Toggle API key section
+            apiKeyToggle.addEventListener('click', () => {
+                if (apiKeyCollapsed) {
+                    expandApiKeySection();
+                } else {
+                    collapseApiKeySection();
+                }
+            });
+            
+            // Function to collapse API key section
+            function collapseApiKeySection() {
+                apiKeySection.classList.add('collapsed');
+                apiKeyToggle.textContent = 'Розгорнути';
+                apiKeyCollapsed = true;
+            }
+            
+            // Function to expand API key section
+            function expandApiKeySection() {
+                apiKeySection.classList.remove('collapsed');
+                apiKeyToggle.textContent = 'Згорнути';
+                apiKeyCollapsed = false;
+            }
+            
+            // Allow clicking on collapsed section to expand
+            apiKeySection.addEventListener('click', (e) => {
+                if (apiKeyCollapsed && e.target === apiKeySection || e.target.closest('.api-key-header')) {
+                    expandApiKeySection();
+                }
+            });
+            
+            // Save API key to localStorage
+            saveApiKeyButton.addEventListener('click', () => {
+                const apiKey = apiKeyInput.value.trim();
+                if (apiKey) {
+                    localStorage.setItem('gemini_api_key', apiKey);
+                    apiKeyStatus.style.display = 'inline';
+                    alert('API ключ збережено!');
+                    
+                    // Auto-collapse after saving
+                    setTimeout(() => {
+                        collapseApiKeySection();
+                    }, 500);
+                } else {
+                    alert('Будь ласка, введіть API ключ.');
+                }
+            });
+            
+            // Style button selection
+            styleButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    styleButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentStyle = button.dataset.style;
+                });
+            });
+            
+            // Translation process
+            translateButton.addEventListener('click', async () => {
+                const apiKey = apiKeyInput.value.trim();
+                const text = sourceText.value.trim();
+                
+                if (!apiKey) {
+                    alert('Будь ласка, введіть API ключ Google Gemini.');
+                    expandApiKeySection();
+                    return;
+                }
+                
+                if (!text) {
+                    alert('Будь ласка, введіть текст для перекладу.');
+                    return;
+                }
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                try {
+                    const translation = await translateText(apiKey, text, currentStyle);
+                    translatedText.value = translation;
+                } catch (error) {
+                    console.error('Translation error:', error);
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = `Помилка: ${error.message || 'Не вдалося перекласти текст.'}`;
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            });
+            
+            // Translation function using Gemini API - UPDATED with correct endpoint
+            async function translateText(apiKey, text, style) {
+                // Prepare style instructions
+                let styleInstruction = '';
+                switch (style) {
+                    case 'casual':
+                        styleInstruction = 'Переклади текст у вільному, розмовному стилі, як для близького друга. Використовуй розмовні вирази та неформальну лексику.';
+                        break;
+                    case 'friendly':
+                        styleInstruction = 'Переклади текст у дружньому, теплому стилі. Використовуй привітні звороти та доброзичливу лексику.';
+                        break;
+                    case 'formal':
+                        styleInstruction = 'Переклади текст у діловому, формальному стилі. Використовуй офіційні звертання та професійну лексику.';
+                        break;
+                    default:
+                        styleInstruction = 'Переклади текст у нейтральному стилі.';
+                }
+                
+                // Updated Gemini API endpoint - using the current model name and API version
+                const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: `Переклади наступний український текст польською мовою. ${styleInstruction} Виправ граматичні та стилістичні помилки. Надай лише переклад без пояснень та оригінального тексту.\n\nТекст для перекладу: "${text}"`
+                                    }
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            temperature: 0.2,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || 'API error');
+                }
+                
+                const data = await response.json();
+                
+                // Extract the translation from the response
+                if (data.candidates && data.candidates.length > 0 && 
+                    data.candidates[0].content && data.candidates[0].content.parts && 
+                    data.candidates[0].content.parts.length > 0) {
+                    return data.candidates[0].content.parts[0].text.trim();
+                } else {
+                    throw new Error('Отримано непрацюючу відповідь від API');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
