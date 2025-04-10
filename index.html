@@ -355,6 +355,24 @@
             opacity: 1;
             visibility: visible;
         }
+        
+        /* Стилі для кнопки очистки */
+        .clear-button {
+            background-color: #ea4335;
+            margin-right: 10px;
+        }
+        
+        .clear-button:hover {
+            background-color: #d23127;
+        }
+        
+        .clear-button:active {
+            background-color: #b92b1f;
+        }
+        
+        .action-buttons {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -411,7 +429,11 @@
                 <button class="style-button" data-style="formal">Діловий</button>
             </div>
             
-            <button id="translate-button">Перекласти</button>
+            <div class="action-buttons">
+                <!-- Нова кнопка очистки -->
+                <button id="clear-button" class="clear-button">Очистити</button>
+                <button id="translate-button">Перекласти</button>
+            </div>
         </div>
         
         <div class="loading">
@@ -444,6 +466,8 @@
             const apiKeyStatus = document.getElementById('api-key-status');
             const copyButton = document.getElementById('copy-button');
             const copyTooltip = document.getElementById('copy-tooltip');
+            // Новий елемент кнопки очистки
+            const clearButton = document.getElementById('clear-button');
             
             // Current translation style
             let currentStyle = 'casual';
@@ -524,6 +548,13 @@
                         alert('Не вдалося скопіювати текст. Будь ласка, спробуйте ще раз.');
                     });
                 }
+            });
+            
+            // Функція очистки полів введення та перекладу
+            clearButton.addEventListener('click', () => {
+                sourceText.value = '';
+                translatedText.value = '';
+                errorMessage.style.display = 'none';
             });
             
             // Style button selection
